@@ -358,6 +358,7 @@
       el.addEventListener('pointerdown', e => {
         dragging = true; el.setPointerCapture(e.pointerId);
         el.classList.add('is-dragging');
+        el.dataset.moved = '1';
         sx = e.clientX; sy = e.clientY; ox = x; oy = y;
         el.style.transition = 'none';
       });
@@ -385,6 +386,38 @@
     });
   });
 
+  /* ---------- Tarjetas del hero: solo se muestran si caben sin tapar el texto ---------- */
+  safe('heroFit', () => {
+    const hero = $('.hero');
+    const cards = $$('.float-card');
+    if (!hero || !cards.length) return;
+    const fit = () => {
+      const content = $$('.hero__title .line > span, .hero__lead, .hero__ctas .btn, .hero .eyebrow, .hero__hint')
+        .map(e => e.getBoundingClientRect())
+        .filter(r => r.width && r.height);
+      const hr = hero.getBoundingClientRect();
+      const vh = Math.min(innerHeight, hr.bottom);
+      cards.forEach(c => {
+        if (c.dataset.moved) return;
+        c.classList.remove('is-off');
+        if (getComputedStyle(c).display === 'none') return;
+        const a = c.getBoundingClientRect();
+        const pad = 18; // margen + flotación
+        const hits = content.some(b => !(a.right < b.left - pad || a.left > b.right + pad || a.bottom < b.top - pad || a.top > b.bottom + pad));
+        const out = a.top < hr.top + 70 || a.bottom > vh - 10 || a.left < 0 || a.right > innerWidth;
+        if (hits || out) c.classList.add('is-off');
+      });
+    };
+    let t;
+    const later = () => { clearTimeout(t); t = setTimeout(fit, 150); };
+    window.addEventListener('resize', later);
+    // medir cuando el texto ya terminó de entrar (sin desplazamientos de animación)
+    const whenReady = () => setTimeout(fit, reduced ? 50 : 1500);
+    if (root.classList.contains('is-ready')) whenReady();
+    else new MutationObserver((_, obs) => { if (root.classList.contains('is-ready')) { obs.disconnect(); whenReady(); } }).observe(root, { attributes: true, attributeFilter: ['class'] });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(later);
+  });
+
   /* ---------- Ticker con velocidad de scroll ---------- */
   const tickers = [];
   safe('ticker', () => {
@@ -409,7 +442,7 @@
   const proc = { el: $('.process'), track: $('.process__track'), dist: 0, active: false };
   safe('process', () => {
     if (!proc.el) return;
-    const mq = window.matchMedia('(min-width: 901px) and (min-height: 561px)');
+    const mq = window.matchMedia('(min-width: 901px) and (min-height: 501px)');
     const dots = $$('.process__step-dot');
     proc.drop = $('.process__drop');
     proc.dots = dots;

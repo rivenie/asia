@@ -533,15 +533,19 @@
     requestAnimationFrame(tick);
   });
 
-  /* ---------- Diseña tu piscina ---------- */
+  /* ---------- Diseña tu piscina (rectangular o circular) ---------- */
   safe('builder', () => {
     const plot = $('#plot'); if (!plot) return;
     const pool = $('#pool');
     const handle = $('#poolHandle');
-    const inL = $('#inLargo'), inA = $('#inAncho'), inP = $('#inProf');
-    const outL = $('#outLargo'), outA = $('#outAncho'), outP = $('#outProf');
-    const rulerX = $('#rulerX'), rulerY = $('#rulerY');
+    const steps = $('.pool__steps', pool);
+    const inL = $('#inLargo'), inA = $('#inAncho'), inP = $('#inProf'), inR = $('#inRadio');
+    const outL = $('#outLargo'), outA = $('#outAncho'), outP = $('#outProf'), outR = $('#outRadio');
+    const rulerX = $('#rulerX'), rulerY = $('#rulerY'), rulerR = $('#rulerR');
+    const diamHint = $('#diamHint'), plotHint = $('#plotHint');
+    const shapeSwitch = $('.shape-switch');
     const rArea = $('#resArea'), rVol = $('#resVol'), rLit = $('#resLit'), rTime = $('#resTime'), rTimeU = $('#resTimeU');
+    const CX = 8, CY = 4.75; // centro de la piscina circular (m) en el terreno de 16 x 9.5 m
     let ppm = 40;
 
     const fmt = (n, d = 1) => n.toFixed(d);
@@ -550,7 +554,6 @@
       const p = (input.value - input.min) / (input.max - input.min) * 100;
       input.style.setProperty('--fill', p + '%');
     };
-
     const tween = (el, to, dec, fmtFn) => {
       const from = parseFloat(el.dataset.v || to);
       el.dataset.v = to;
@@ -565,26 +568,56 @@
       requestAnimationFrame(run);
     };
 
+    const forma = () => ($('input[name="forma"]:checked') || {}).value || 'rect';
     const tipo = () => ($('input[name="tipo"]:checked') || {}).value || 'Concreto';
     const extras = () => $$('input[name="extra"]:checked').map(i => i.value);
+    const isCircle = () => forma() === 'circle';
+    const area = () => isCircle() ? Math.PI * Math.pow(+inR.value, 2) : (+inL.value) * (+inA.value);
 
     const update = () => {
-      const L = +inL.value, A = +inA.value, P = +inP.value;
-      outL.textContent = fmt(L) + ' m'; outA.textContent = fmt(A) + ' m'; outP.textContent = fmt(P, 2) + ' m';
-      [inL, inA, inP].forEach(fill);
-      pool.style.width = (L * ppm) + 'px';
-      pool.style.height = (A * ppm) + 'px';
-      const pw = plot.clientWidth, ph = plot.clientHeight;
-      plot.style.setProperty('--rx-w', Math.min(L * ppm, pw) + 'px');
-      plot.style.setProperty('--ry-h', A * ppm + 'px');
-      const rx = $('.plot__ruler--x'), ry = $('.plot__ruler--y');
-      rx.style.top = Math.min(ppm * .5 + A * ppm + 14, ph - 28) + 'px';
-      ry.style.left = Math.min(ppm * .5 + L * ppm + 26, pw - 64) + 'px';
-      rulerX.textContent = fmt(L) + ' m';
-      rulerY.textContent = fmt(A) + ' m';
+      const circle = isCircle();
+      const L = +inL.value, A = +inA.value, P = +inP.value, R = +inR.value;
+      outL.textContent = fmt(L) + ' m'; outA.textContent = fmt(A) + ' m';
+      outP.textContent = fmt(P, 2) + ' m'; outR.textContent = fmt(R) + ' m';
+      diamHint.textContent = 'Diámetro: ' + fmt(R * 2) + ' m';
+      [inL, inA, inP, inR].forEach(fill);
 
-      const area = L * A, vol = area * P;
-      tween(rArea, area, 1);
+      pool.classList.toggle('is-circle', circle);
+      plot.classList.toggle('is-circle', circle);
+      shapeSwitch.classList.toggle('is-circle', circle);
+      $$('[data-shape]').forEach(f => { f.hidden = f.dataset.shape !== (circle ? 'circle' : 'rect'); });
+
+      if (circle) {
+        const D = 2 * R * ppm;
+        pool.style.left = ((CX - R) * ppm) + 'px';
+        pool.style.top = ((CY - R) * ppm) + 'px';
+        pool.style.width = pool.style.height = D + 'px';
+        const rw = D / 2 - 7; // radio del agua dentro del borde
+        steps.style.clipPath = 'circle(' + rw + 'px at ' + rw + 'px 50%)';
+        rulerR.textContent = 'r = ' + fmt(R) + ' m';
+        // si la etiqueta no cabe sobre la línea del radio, va debajo del centro
+        pool.classList.toggle('r-tight', rw < rulerR.offsetWidth + 40);
+        plotHint.textContent = 'Cada cuadro = 1 m · Arrastra el punto turquesa para cambiar el radio';
+        handle.setAttribute('aria-label', 'Arrastra para cambiar el radio de la piscina (flechas: ±0.1 m)');
+      } else {
+        pool.style.left = (ppm * .5) + 'px';
+        pool.style.top = (ppm * .5) + 'px';
+        pool.style.width = (L * ppm) + 'px';
+        pool.style.height = (A * ppm) + 'px';
+        steps.style.clipPath = '';
+        const pw = plot.clientWidth, ph = plot.clientHeight;
+        plot.style.setProperty('--rx-w', Math.min(L * ppm, pw) + 'px');
+        plot.style.setProperty('--ry-h', A * ppm + 'px');
+        $('.plot__ruler--x').style.top = Math.min(ppm * .5 + A * ppm + 14, ph - 28) + 'px';
+        $('.plot__ruler--y').style.left = Math.min(ppm * .5 + L * ppm + 26, pw - 64) + 'px';
+        rulerX.textContent = fmt(L) + ' m';
+        rulerY.textContent = fmt(A) + ' m';
+        plotHint.textContent = 'Cada cuadro = 1 m · Arrastra el punto turquesa de la esquina';
+        handle.setAttribute('aria-label', 'Arrastra para cambiar el largo y el ancho de la piscina (flechas: ±0.5 m)');
+      }
+
+      const a = area(), vol = a * P;
+      tween(rArea, a, 1);
       tween(rVol, vol, 1);
       tween(rLit, vol * 1000, 0, thousands);
       const t = tipo();
@@ -604,33 +637,54 @@
       update();
     };
 
-    [inL, inA, inP].forEach(i => i.addEventListener('input', update));
-    $$('#builderForm input[type="radio"], #builderForm input[type="checkbox"]').forEach(i => i.addEventListener('change', update));
+    [inL, inA, inP, inR].forEach(i => i.addEventListener('input', update));
+    $$('#builderForm input[name="tipo"], #builderForm input[name="extra"]').forEach(i => i.addEventListener('change', update));
+    // Cambio de forma con transición (el rectángulo se transforma en círculo)
+    let morphT;
+    $$('input[name="forma"]').forEach(i => i.addEventListener('change', () => {
+      pool.classList.add('is-morphing');
+      clearTimeout(morphT);
+      morphT = setTimeout(() => pool.classList.remove('is-morphing'), 650);
+      update();
+    }));
 
-    // Arrastrar la esquina
+    // Arrastrar: esquina (rectangular) o borde (circular)
     let dragging = false;
     handle.addEventListener('pointerdown', e => {
       dragging = true; handle.setPointerCapture(e.pointerId);
+      pool.classList.remove('is-morphing');
       pool.classList.add('is-dragging'); plot.classList.add('is-dragging');
       e.preventDefault();
     });
     handle.addEventListener('pointermove', e => {
       if (!dragging) return;
       const r = plot.getBoundingClientRect();
-      const L = clamp(Math.round(((e.clientX - r.left) / ppm - .5) * 2) / 2, +inL.min, +inL.max);
-      const A = clamp(Math.round(((e.clientY - r.top) / ppm - .5) * 2) / 2, +inA.min, +inA.max);
-      if (L !== +inL.value || A !== +inA.value) { inL.value = L; inA.value = A; update(); }
+      const x = (e.clientX - r.left) / ppm, y = (e.clientY - r.top) / ppm;
+      if (isCircle()) {
+        const R = clamp(Math.round(Math.hypot(x - CX, y - CY) * 10) / 10, +inR.min, +inR.max);
+        if (R !== +inR.value) { inR.value = R; update(); }
+      } else {
+        const L = clamp(Math.round((x - .5) * 2) / 2, +inL.min, +inL.max);
+        const A = clamp(Math.round((y - .5) * 2) / 2, +inA.min, +inA.max);
+        if (L !== +inL.value || A !== +inA.value) { inL.value = L; inA.value = A; update(); }
+      }
     });
     const end = () => { dragging = false; pool.classList.remove('is-dragging'); plot.classList.remove('is-dragging'); };
     handle.addEventListener('pointerup', end);
     handle.addEventListener('pointercancel', end);
     handle.addEventListener('keydown', e => {
       const k = e.key; let used = true;
-      if (k === 'ArrowRight') inL.value = +inL.value + .5;
-      else if (k === 'ArrowLeft') inL.value = +inL.value - .5;
-      else if (k === 'ArrowDown') inA.value = +inA.value + .5;
-      else if (k === 'ArrowUp') inA.value = +inA.value - .5;
-      else used = false;
+      if (isCircle()) {
+        if (k === 'ArrowRight' || k === 'ArrowUp') inR.value = (+inR.value + .1).toFixed(1);
+        else if (k === 'ArrowLeft' || k === 'ArrowDown') inR.value = (+inR.value - .1).toFixed(1);
+        else used = false;
+      } else {
+        if (k === 'ArrowRight') inL.value = +inL.value + .5;
+        else if (k === 'ArrowLeft') inL.value = +inL.value - .5;
+        else if (k === 'ArrowDown') inA.value = +inA.value + .5;
+        else if (k === 'ArrowUp') inA.value = +inA.value - .5;
+        else used = false;
+      }
       if (used) { e.preventDefault(); update(); }
     });
 
@@ -638,14 +692,17 @@
     measure();
 
     $('#sendDesign').addEventListener('click', () => {
-      const L = +inL.value, A = +inA.value, P = +inP.value;
+      const P = +inP.value, a = area();
       const ex = extras();
+      const medidas = isCircle()
+        ? ['• Forma: Circular', '• Radio: ' + fmt(+inR.value) + ' m (diámetro ' + fmt(+inR.value * 2) + ' m)']
+        : ['• Forma: Rectangular', '• Medidas: ' + fmt(+inL.value) + ' m x ' + fmt(+inA.value) + ' m'];
       const msg = [
         'Hola Asia Piscinas, diseñé mi piscina en su web:',
         '• Tipo: ' + tipo(),
-        '• Medidas: ' + fmt(L) + ' m x ' + fmt(A) + ' m',
+        ...medidas,
         '• Profundidad promedio: ' + fmt(P, 2) + ' m',
-        '• Espejo de agua: ' + fmt(L * A) + ' m² · Volumen aprox.: ' + fmt(L * A * P) + ' m³',
+        '• Espejo de agua: ' + fmt(a) + ' m² · Volumen aprox.: ' + fmt(a * P) + ' m³',
         '• Extras: ' + (ex.length ? ex.join(', ') : 'ninguno'),
         'Quisiera una asesoría gratuita.'
       ].join('\n');

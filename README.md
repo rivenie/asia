@@ -10,8 +10,18 @@ Sitio de una sola página, sin dependencias (HTML + CSS + JavaScript puro). El c
   ```
   Luego abre http://localhost:8080
 
-## Publicar
-Sube la carpeta tal cual a cualquier hosting estático (Netlify, Vercel, GitHub Pages, cPanel…).
+## Subir a GitHub
+1. En GitHub, crea un repositorio nuevo (por ejemplo `asia-piscinas`).
+2. En el repositorio, entra en **Add file → Upload files**.
+3. Arrastra **el contenido** de esta carpeta: `index.html`, `README.md` y la carpeta `assets`. GitHub no descomprime archivos `.zip`, así que primero hay que descomprimirlo.
+4. Pulsa **Commit changes**.
+
+### Verla en línea con GitHub Pages
+1. En el repositorio, entra en **Settings → Pages**.
+2. En **Source**, elige **Deploy from a branch**, la rama `main` y la carpeta `/ (root)`. Pulsa **Save**.
+3. En uno o dos minutos la web queda en `https://TU-USUARIO.github.io/NOMBRE-DEL-REPO/`.
+
+Todas las rutas del sitio son relativas, así que funciona sin cambios en GitHub Pages o en cualquier otro hosting estático.
 
 ## Estructura
 ```
@@ -30,7 +40,7 @@ assets/img/             → imágenes optimizadas del sitio original
 | Medidor de "profundidad" del scroll (pantallas ≥ 1400 px) | Lateral derecho |
 | Tarjetas con inclinación 3D y brillo | Servicios, Equipo |
 | Proceso con scroll horizontal fijado | Proceso |
-| Configurador "Diseña tu piscina": esquina arrastrable, m², m³, litros, plazo y envío por WhatsApp | Diseña tu piscina |
+| Configurador "Diseña tu piscina": forma rectangular (largo × ancho) o circular (radio), punto arrastrable, m², m³, litros, plazo y envío por WhatsApp | Diseña tu piscina |
 | Carrusel de productos arrastrable con inercia y filtros | Tienda |
 | Mazo de testimonios que se desliza con el dedo o el ratón | Testimonios |
 | Formulario que arma el mensaje para WhatsApp o correo | Contacto |

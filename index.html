@@ -349,7 +349,7 @@
             <span class="tag tag--light reveal">Interactivo</span>
             <h2 class="h2 reveal">Diseña tu piscina en <em>30 segundos</em>.</h2>
           </div>
-          <p class="reveal">Arrastra la esquina para definir el tamaño, ajusta la profundidad y elige el tipo. Te enviamos una asesoría gratuita con tus medidas.</p>
+          <p class="reveal">Elige rectangular o circular, arrastra el punto turquesa para definir el tamaño, ajusta la profundidad y el tipo. Te enviamos una asesoría gratuita con tus medidas.</p>
         </div>
 
         <div class="builder__grid">
@@ -360,22 +360,43 @@
               <div class="pool" id="pool">
                 <div class="pool__water"><div class="pool__light"></div></div>
                 <div class="pool__steps"><i></i><i></i><i></i></div>
+                <div class="pool__radius" aria-hidden="true"><span id="rulerR">r = 2.5 m</span></div>
                 <button class="pool__handle" id="poolHandle" aria-label="Arrastra para cambiar el tamaño de la piscina" data-cursor="Arrastra">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 20H4v-4M16 4h4v4M4 20l7-7M20 4l-7 7"/></svg>
+                  <svg class="ico-rect" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 20H4v-4M16 4h4v4M4 20l7-7M20 4l-7 7"/></svg>
+                  <svg class="ico-circle" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4"/></svg>
                 </button>
               </div>
             </div>
-            <p class="plot__hint">Cada cuadro = 1 m · Arrastra el círculo</p>
+            <p class="plot__hint" id="plotHint">Cada cuadro = 1 m · Arrastra el punto turquesa de la esquina</p>
           </div>
 
           <form class="builder__panel reveal" id="builderForm" onsubmit="return false">
-            <div class="field">
+            <fieldset class="field">
+              <legend>Forma</legend>
+              <div class="shape-switch" role="radiogroup" aria-label="Forma de la piscina">
+                <label class="shape-opt">
+                  <input type="radio" name="forma" value="rect" checked>
+                  <span><svg viewBox="0 0 32 24" aria-hidden="true"><rect x="2" y="3" width="28" height="18" rx="2.5"/></svg>Rectangular</span>
+                </label>
+                <label class="shape-opt">
+                  <input type="radio" name="forma" value="circle">
+                  <span><svg viewBox="0 0 32 24" aria-hidden="true"><circle cx="16" cy="12" r="9.5"/><path d="M16 12h9.5"/></svg>Circular</span>
+                </label>
+                <span class="shape-switch__ink" aria-hidden="true"></span>
+              </div>
+            </fieldset>
+            <div class="field" data-shape="rect">
               <label for="inLargo">Largo <output id="outLargo">8.0 m</output></label>
               <input type="range" id="inLargo" min="3" max="15" step="0.5" value="8">
             </div>
-            <div class="field">
+            <div class="field" data-shape="rect">
               <label for="inAncho">Ancho <output id="outAncho">4.0 m</output></label>
               <input type="range" id="inAncho" min="2" max="8" step="0.5" value="4">
+            </div>
+            <div class="field" data-shape="circle" hidden>
+              <label for="inRadio">Radio <output id="outRadio">2.5 m</output></label>
+              <input type="range" id="inRadio" min="1" max="4" step="0.1" value="2.5">
+              <small class="field__hint" id="diamHint">Diámetro: 5.0 m</small>
             </div>
             <div class="field">
               <label for="inProf">Profundidad promedio <output id="outProf">1.40 m</output></label>
